@@ -14,10 +14,3 @@ bool push(node<T> *&head, T data) {
     return true;
 }
 
-template<typename T>
-bool isEmpty(node<T> *head) {
-    if (head == nullptr) {
-        return true;
-    }
-    return false;
-}
