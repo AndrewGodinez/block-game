@@ -1,6 +1,6 @@
-template<typename T, typename U>
-bool enqueue(node<T>*& front, node<T>*& rear, U data) {
-    node<T>* nNode = new node<T> {static_cast<T>(data), nullptr};
+template<typename T>
+bool enqueue(node<T>*& front, node<T>*& rear, T data) {
+    node<T>* nNode = new node<T>{data, nullptr};
     if (isEmpty(front)) {
         front = nNode;
         rear = nNode;
@@ -14,9 +14,9 @@ bool enqueue(node<T>*& front, node<T>*& rear, U data) {
 template<typename T>
 bool dequeue(node<T>*& front, node<T>*& rear, T& data) {
     if (isEmpty(front)) return false;
+    data = front->data;
     node<T>* aux = front;
-    data = aux->data;
-    front = aux->next;
+    front = front->next;
     if (front == nullptr) {
         rear = nullptr;
     }
@@ -28,7 +28,7 @@ template<typename T>
 bool dequeue(node<T>*& front, node<T>*& rear) {
     if (isEmpty(front)) return false;
     node<T>* aux = front;
-    front = aux->next;
+    front = front->next;
     if (front == nullptr) {
         rear = nullptr;
     }
@@ -43,27 +43,53 @@ bool peek(node<T>* front, T& data) {
     return true;
 }
 
-template<typename T, typename U>
-bool enqueue(Queue<T>& q, U data) {
-    return enqueue(q.front, q.rear, data);
+template<typename T>
+void clear(node<T>*& front, node<T>*& rear) {
+    while (!isEmpty(front)) {
+        dequeue(front, rear);
+    }
 }
 
 template<typename T>
-bool dequeue(Queue<T>& q, T& data) {
-    return dequeue(q.front, q.rear, data);
+bool enqueue(Queue<T>& queue, T data) {
+    if (enqueue(queue.front, queue.rear, data)) {
+        queue.count++;
+        return true;
+    }
+    return false;
 }
 
 template<typename T>
-bool dequeue(Queue<T>& q) {
-    return dequeue(q.front, q.rear);
+bool dequeue(Queue<T>& queue, T& data) {
+    if (dequeue(queue.front, queue.rear, data)) {
+        queue.count--;
+        return true;
+    }
+    return false;
 }
 
 template<typename T>
-bool peek(const Queue<T>& q, T& data) {
-    return peek(q.front, data);
+bool dequeue(Queue<T>& queue) {
+    if (dequeue(queue.front, queue.rear)) {
+        queue.count--;
+        return true;
+    }
+    return false;
 }
 
 template<typename T>
-bool isEmpty(const Queue<T>& q) {
-    return isEmpty(q.front);
+bool peek(const Queue<T>& queue, T& data) {
+    return peek(queue.front, data);
+}
+
+template<typename T>
+bool isEmpty(const Queue<T>& queue) {
+    return isEmpty(queue.front);
+}
+
+template<typename T>
+void clear(Queue<T>& queue) {
+    while (!isEmpty(queue)) {
+        dequeue(queue);
+    }
 }

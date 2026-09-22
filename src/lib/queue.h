@@ -6,10 +6,11 @@ template<typename T>
 struct Queue {
     node<T>* front = nullptr;
     node<T>* rear = nullptr;
+    int count = 0;
 };
 
-template<typename T, typename U = T>
-bool enqueue(node<T>*& front, node<T>*& rear, U data);
+template<typename T>
+bool enqueue(node<T>*& front, node<T>*& rear, T data);
 
 template<typename T>
 bool dequeue(node<T>*& front, node<T>*& rear, T& data);
@@ -20,19 +21,25 @@ bool dequeue(node<T>*& front, node<T>*& rear);
 template<typename T>
 bool peek(node<T>* front, T& data);
 
-template<typename T, typename U = T>
-bool enqueue(Queue<T>& q, U data);
+template<typename T>
+void clear(node<T>*& front, node<T>*& rear);
 
 template<typename T>
-bool dequeue(Queue<T>& q, T& data);
+bool enqueue(Queue<T>& queue, T data);
 
 template<typename T>
-bool dequeue(Queue<T>& q);
+bool dequeue(Queue<T>& queue, T& data);
 
 template<typename T>
-bool peek(const Queue<T>& q, T& data);
+bool dequeue(Queue<T>& queue);
 
 template<typename T>
-bool isEmpty(const Queue<T>& q);
+bool peek(const Queue<T>& queue, T& data);
+
+template<typename T>
+bool isEmpty(const Queue<T>& queue);
+
+template<typename T>
+void clear(Queue<T>& queue);
 
 #include "queue.tpp"

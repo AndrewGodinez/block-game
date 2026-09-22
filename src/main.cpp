@@ -1,61 +1,77 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <vector>
 #include "lib/queue.h"
-#include "lib/stack.h"
+#include "core/tetromino.h"
+#include "core/bag.h"
 
-// Estructura para representar un bloque visual en la cola
-struct GameBlock {
-    int id;
-    sf::Color color;
-};
+
+void drawCell(sf::RenderWindow& window, float pixelX, float pixelY, float size, sf::Color color, sf::Color outlineColor = sf::Color(40, 40, 40)) {
+    sf::RectangleShape cell({size - 2.f, size - 2.f});
+    cell.setPosition({pixelX + 1.f, pixelY + 1.f});
+    cell.setFillColor(color);
+    cell.setOutlineThickness(1.f);
+    cell.setOutlineColor(outlineColor);
+    window.draw(cell);
+}
+
+
+void drawPiecePreview(sf::RenderWindow& window, PieceType pType, float startX, float startY, float cellSize) {
+    if (pType == PieceType::NONE) return;
+
+    BlockPos blocks[4];
+    Tetromino::getBlocksFor(pType, 0, blocks);
+    sf::Color color = Tetromino::getColorFor(pType);
+
+    for (int i = 0; i < 4; ++i) {
+        float px = startX + blocks[i].col * cellSize;
+        float py = startY + blocks[i].row * cellSize;
+        drawCell(window, px, py, cellSize, color, sf::Color::White);
+    }
+}
 
 int main() {
-    std::cout << "==========================================" << std::endl;
-    std::cout << "     MedievalBlock - Demo SFML 3          " << std::endl;
-    std::cout << "==========================================" << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << "   TETRIS (EIF207) - FASE 1: PIEZAS Y COLA     " << std::endl;
+    std::cout << "===============================================" << std::endl;
+    std::cout << "Mecánicas evaluadas activas:" << std::endl;
+    std::cout << "  - Cola propia (FIFO): Generador 7-Bag" << std::endl;
+    std::cout << "  - 7 Tetrominos con sus 4 orientaciones fijas" << std::endl;
+    std::cout << "  - Panel con las siguientes 3 piezas en espera" << std::endl;
     std::cout << "Controles:" << std::endl;
-    std::cout << "  [ESPACIO / Click]: Encolar nuevo bloque" << std::endl;
-    std::cout << "  [D / RETROCESO]  : Desencolar (quitar frente)" << std::endl;
-    std::cout << "  [P]              : Inspeccionar frente (peek)" << std::endl;
-    std::cout << "  [ESC]            : Salir" << std::endl;
-    std::cout << "==========================================" << std::endl;
+    std::cout << "  [FLECHAS / A-D]: Mover izquierda / derecha" << std::endl;
+    std::cout << "  [ARRIBA / W]   : Rotar (orientaciones 0 a 3)" << std::endl;
+    std::cout << "  [ABAJO / S]    : Bajar rapido" << std::endl;
+    std::cout << "  [ESPACIO]      : Fijar y pedir siguiente de la cola" << std::endl;
+    std::cout << "  [ESC]          : Salir" << std::endl;
+    std::cout << "===============================================" << std::endl;
 
-    // Crear ventana con la nueva API de SFML 3 (VideoMode con Vector2u)
-    sf::RenderWindow window(sf::VideoMode({800, 600}), "MedievalBlock - SFML 3 Demo");
+    // Ventana principal en SFML 3 (800x650)
+    sf::RenderWindow window(sf::VideoMode({800, 650}), "Tetris - Fase 1: Cola 7-Bag y Piezas");
     window.setFramerateLimit(60);
 
-    // Bloque central animado (Medieval Block)
-    sf::RectangleShape centerBlock({140.f, 90.f});
-    centerBlock.setOrigin({70.f, 45.f});
-    centerBlock.setPosition({400.f, 250.f});
-    centerBlock.setFillColor(sf::Color(70, 130, 180)); // Steel Blue
-    centerBlock.setOutlineThickness(3.f);
-    centerBlock.setOutlineColor(sf::Color::White);
+    // 1. Inicializar la Cola de Piezas Futuras (Sección 3.1 del PDF)
+    Queue<PieceType> pieceQueue;
+    PieceBag::refillBag(pieceQueue); // Primera bolsa de 7
+    PieceBag::refillBag(pieceQueue); // Segunda bolsa de respaldo
 
-    // Cola dinámica usando nuestra biblioteca Queue
-    Queue<GameBlock> blockQueue;
-    int nextId = 1;
+    // 2. Extraer la primera pieza activa
+    Tetromino currentPiece = PieceBag::getNext(pieceQueue);
+    std::cout << "[INICIO]: Pieza activa generada. Piezas en cola: " 
+              << PieceBag::countQueue(pieceQueue) << std::endl;
 
-    const std::vector<sf::Color> palette = {
-        sf::Color(220, 20, 60),   // Carmesí
-        sf::Color(46, 139, 87),   // Verde mar
-        sf::Color(255, 165, 0),   // Naranja
-        sf::Color(147, 112, 219), // Púrpura
-        sf::Color(255, 215, 0),   // Dorado
-        sf::Color(30, 144, 255)   // Azul brillante
-    };
+    // Configuración del tablero visual (10 columnas x 20 filas)
+    const int COLS = 10;
+    const int ROWS = 20;
+    const float CELL_SIZE = 26.f;
+    const float BOARD_X = 220.f;
+    const float BOARD_Y = 50.f;
 
-    // Encolar bloques iniciales para visualizar la fila (FIFO)
-    for (int i = 0; i < 4; ++i) {
-        enqueue(blockQueue, GameBlock{nextId, palette[(nextId - 1) % palette.size()]});
-        std::cout << "[Inicial]: Bloque #" << nextId << " encolado." << std::endl;
-        nextId++;
-    }
+    // Reloj para caída automática (gravedad básica de prueba)
+    sf::Clock dropClock;
+    float dropInterval = 0.6f; // Cae cada 0.6 segundos
 
-    // Bucle principal del juego
     while (window.isOpen()) {
-        // En SFML 3 pollEvent() retorna un std::optional<sf::Event>
+        // Manejo de eventos con la API de SFML 3
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
                 window.close();
@@ -64,74 +80,111 @@ int main() {
             if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
                 if (keyPressed->code == sf::Keyboard::Key::Escape) {
                     window.close();
+                } else if (keyPressed->code == sf::Keyboard::Key::Left || keyPressed->code == sf::Keyboard::Key::A) {
+                    // Mover a la izquierda (con límite básico de pantalla)
+                    if (currentPiece.col > 0) currentPiece.col--;
+                } else if (keyPressed->code == sf::Keyboard::Key::Right || keyPressed->code == sf::Keyboard::Key::D) {
+                    // Mover a la derecha (con límite básico)
+                    if (currentPiece.col < COLS - 3) currentPiece.col++;
+                } else if (keyPressed->code == sf::Keyboard::Key::Up || keyPressed->code == sf::Keyboard::Key::W) {
+                    // Rotar pieza (cicla 0 -> 1 -> 2 -> 3 -> 0)
+                    currentPiece.rotation = (currentPiece.rotation + 1) % 4;
+                    std::cout << "-> Rotacion: " << currentPiece.rotation << std::endl;
+                } else if (keyPressed->code == sf::Keyboard::Key::Down || keyPressed->code == sf::Keyboard::Key::S) {
+                    // Caída suave acelerada
+                    if (currentPiece.row < ROWS - 4) currentPiece.row++;
                 } else if (keyPressed->code == sf::Keyboard::Key::Space) {
-                    // Encolar un nuevo bloque
-                    sf::Color color = palette[(nextId - 1) % palette.size()];
-                    enqueue(blockQueue, GameBlock{nextId, color});
-                    std::cout << "-> [ENQUEUE]: Bloque #" << nextId << " agregado a la cola." << std::endl;
-                    nextId++;
-                } else if (keyPressed->code == sf::Keyboard::Key::D ||
-                           keyPressed->code == sf::Keyboard::Key::Backspace) {
-                    // Desencolar bloque del frente
-                    GameBlock removed;
-                    if (dequeue(blockQueue, removed)) {
-                        std::cout << "<- [DEQUEUE]: Bloque #" << removed.id << " salio de la cola." << std::endl;
-                    } else {
-                        std::cout << "<- [DEQUEUE]: La cola esta vacia!" << std::endl;
-                    }
-                } else if (keyPressed->code == sf::Keyboard::Key::P) {
-                    // Consultar frente sin eliminar
-                    GameBlock frontBlock;
-                    if (peek(blockQueue, frontBlock)) {
-                        std::cout << "[PEEK]: El frente es el bloque #" << frontBlock.id << std::endl;
-                    } else {
-                        std::cout << "[PEEK]: La cola esta vacia." << std::endl;
-                    }
-                }
-            }
-
-            if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
-                if (mousePressed->button == sf::Mouse::Button::Left) {
-                    sf::Color color = palette[(nextId - 1) % palette.size()];
-                    enqueue(blockQueue, GameBlock{nextId, color});
-                    std::cout << "-> [CLICK ENQUEUE]: Bloque #" << nextId << " agregado a la cola." << std::endl;
-                    nextId++;
+                    // Simular fijar y pedir la siguiente pieza de la cola (FIFO)
+                    currentPiece = PieceBag::getNext(pieceQueue);
+                    std::cout << "-> [ESPACIO]: Siguiente pieza extraida de la cola. Restantes: " 
+                              << PieceBag::countQueue(pieceQueue) << std::endl;
                 }
             }
         }
 
-        // Rotación continua con sf::degrees() de SFML 3
-        centerBlock.rotate(sf::degrees(1.0f));
-
-        // Limpieza de pantalla (fondo oscuro)
-        window.clear(sf::Color(20, 24, 30));
-
-        // Dibujar el bloque central rotando
-        window.draw(centerBlock);
-
-        // Representación visual de la cola FIFO en la parte inferior
-        float startX = 60.f;
-        float posY = 480.f;
-        float blockWidth = 60.f;
-        float blockHeight = 40.f;
-        float spacing = 15.f;
-
-        node<GameBlock>* curr = blockQueue.front;
-        int index = 0;
-        while (curr != nullptr && startX + index * (blockWidth + spacing) < 760.f) {
-            sf::RectangleShape shape({blockWidth, blockHeight});
-            shape.setPosition({startX + index * (blockWidth + spacing), posY});
-            shape.setFillColor(curr->data.color);
-            // El frente de la cola se resalta con borde dorado/amarillo
-            shape.setOutlineThickness(index == 0 ? 3.f : 1.f);
-            shape.setOutlineColor(index == 0 ? sf::Color::Yellow : sf::Color::White);
-            window.draw(shape);
-
-            curr = curr->next;
-            index++;
+        // Caída por gravedad automática de prueba
+        if (dropClock.getElapsedTime().asSeconds() >= dropInterval) {
+            dropClock.restart();
+            if (currentPiece.row < ROWS - 4) {
+                currentPiece.row++;
+            } else {
+                // Al llegar al fondo, pide la siguiente pieza de la cola
+                currentPiece = PieceBag::getNext(pieceQueue);
+                std::cout << "-> [FONDO]: Siguiente pieza de la cola. Restantes: " 
+                          << PieceBag::countQueue(pieceQueue) << std::endl;
+            }
         }
 
-        // Mostrar fotograma renderizado
+        // ================= RENDERIZADO =================
+        window.clear(sf::Color(18, 20, 24)); // Fondo oscuro
+
+        // 1. Dibujar fondo y cuadrícula del tablero (10x20)
+        sf::RectangleShape boardBg({COLS * CELL_SIZE, ROWS * CELL_SIZE});
+        boardBg.setPosition({BOARD_X, BOARD_Y});
+        boardBg.setFillColor(sf::Color(10, 12, 16));
+        boardBg.setOutlineThickness(3.f);
+        boardBg.setOutlineColor(sf::Color(80, 85, 100));
+        window.draw(boardBg);
+
+        // Cuadrícula sutil
+        for (int r = 0; r < ROWS; ++r) {
+            for (int c = 0; c < COLS; ++c) {
+                drawCell(window, BOARD_X + c * CELL_SIZE, BOARD_Y + r * CELL_SIZE, CELL_SIZE, sf::Color(15, 18, 22), sf::Color(30, 34, 42));
+            }
+        }
+
+        // 2. Dibujar la pieza activa actual
+        BlockPos blocks[4];
+        currentPiece.getBlocks(blocks);
+        for (int i = 0; i < 4; ++i) {
+            float px = BOARD_X + (currentPiece.col + blocks[i].col) * CELL_SIZE;
+            float py = BOARD_Y + (currentPiece.row + blocks[i].row) * CELL_SIZE;
+            drawCell(window, px, py, CELL_SIZE, currentPiece.color, sf::Color::White);
+        }
+
+        // 3. Dibujar el panel lateral "SIGUIENTES PIEZAS (COLA FIFO)"
+        const float PANEL_X = 530.f;
+        const float PANEL_Y = BOARD_Y;
+        const float PANEL_W = 180.f;
+        const float PANEL_H = 340.f;
+
+        sf::RectangleShape nextPanel({PANEL_W, PANEL_H});
+        nextPanel.setPosition({PANEL_X, PANEL_Y});
+        nextPanel.setFillColor(sf::Color(25, 28, 36));
+        nextPanel.setOutlineThickness(2.f);
+        nextPanel.setOutlineColor(sf::Color(100, 110, 130));
+        window.draw(nextPanel);
+
+        // Obtener las 3 siguientes de la cola sin eliminarlas (PEEK)
+        PieceType nextThree[3];
+        PieceBag::peekNextThree(pieceQueue, nextThree);
+
+        // Dibujar las 3 piezas en el panel
+        for (int i = 0; i < 3; ++i) {
+            float previewX = PANEL_X + 45.f;
+            float previewY = PANEL_Y + 30.f + i * 95.f;
+
+            // Recuadro para cada pieza
+            sf::RectangleShape slot({130.f, 75.f});
+            slot.setPosition({PANEL_X + 25.f, PANEL_Y + 20.f + i * 95.f});
+            slot.setFillColor(sf::Color(18, 20, 26));
+            slot.setOutlineThickness(1.f);
+            slot.setOutlineColor(sf::Color(60, 65, 80));
+            window.draw(slot);
+
+            drawPiecePreview(window, nextThree[i], previewX, previewY, 20.f);
+        }
+
+        // 4. Dibujar panel de estado informativo (HOLD previsto)
+        const float HOLD_X = 40.f;
+        const float HOLD_Y = BOARD_Y;
+        sf::RectangleShape holdPanel({140.f, 150.f});
+        holdPanel.setPosition({HOLD_X, HOLD_Y});
+        holdPanel.setFillColor(sf::Color(25, 28, 36));
+        holdPanel.setOutlineThickness(2.f);
+        holdPanel.setOutlineColor(sf::Color(100, 110, 130));
+        window.draw(holdPanel);
+
         window.display();
     }
 
