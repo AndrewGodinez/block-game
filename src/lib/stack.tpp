@@ -11,10 +11,7 @@ template<typename T>
 bool pop(node<T>*& head, T& data) {
     if(isEmpty(head)) return false;
     data = head->data;
-    node<T>* aux = head;
-    head = aux->next;
-    delete aux;
-    return true; 
+    return pop(head); 
 }
 
 template<typename T>

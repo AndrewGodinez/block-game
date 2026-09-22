@@ -12,9 +12,8 @@ bool enqueue(node<T>*& front, node<T>*& rear, T data) {
 }
 
 template<typename T>
-bool dequeue(node<T>*& front, node<T>*& rear, T& data) {
+bool dequeue(node<T>*& front, node<T>*& rear) {
     if (isEmpty(front)) return false;
-    data = front->data;
     node<T>* aux = front;
     front = front->next;
     if (front == nullptr) {
@@ -25,15 +24,10 @@ bool dequeue(node<T>*& front, node<T>*& rear, T& data) {
 }
 
 template<typename T>
-bool dequeue(node<T>*& front, node<T>*& rear) {
+bool dequeue(node<T>*& front, node<T>*& rear, T& data) {
     if (isEmpty(front)) return false;
-    node<T>* aux = front;
-    front = front->next;
-    if (front == nullptr) {
-        rear = nullptr;
-    }
-    delete aux;
-    return true;
+    data = front->data;
+    return dequeue(front,rear);
 }
 
 template<typename T>
