@@ -1,7 +1,11 @@
 #include "game_logic.h"
+#include <cstdlib>
+#include <ctime>
 
-GameLogic::GameLogic() : gameOver(false), linesClearedTotal(0) {
+GameLogic::GameLogic() : gameOver(false), linesClearedTotal(0), dropTimer(0.0f), dropInterval(0.8f) {
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
     initBoard(board);
+    spawnPiece(getRandomPieceType());
 }
 
 GameLogic::~GameLogic() {
@@ -14,6 +18,13 @@ void GameLogic::reset() {
     currentPiece = Piece();
     gameOver = false;
     linesClearedTotal = 0;
+    dropTimer = 0.0f;
+    spawnPiece(getRandomPieceType());
+}
+
+PieceType GameLogic::getRandomPieceType() {
+    int r = (std::rand() % 7) + 1;
+    return static_cast<PieceType>(r);
 }
 
 bool GameLogic::isValidPosition(const Piece& piece) const {
@@ -39,6 +50,24 @@ bool GameLogic::spawnPiece(PieceType type) {
         return false;
     }
     return true;
+}
+
+void GameLogic::update(float dt) {
+    if (gameOver) return;
+
+    if (currentPiece.type == PieceType::NONE) {
+        spawnPiece(getRandomPieceType());
+        if (gameOver) return;
+    }
+
+    dropTimer += dt;
+    if (dropTimer >= dropInterval) {
+        dropTimer = 0.0f;
+        if (!moveDown()) {
+            lockCurrentPiece();
+            spawnPiece(getRandomPieceType());
+        }
+    }
 }
 
 bool GameLogic::moveLeft() {
@@ -97,11 +126,14 @@ bool GameLogic::rotateCounter() {
 }
 
 int GameLogic::hardDrop() {
-    if (gameOver) return 0;
+    if (gameOver || currentPiece.type == PieceType::NONE) return 0;
     int droppedRows = 0;
     while (moveDown()) {
         droppedRows++;
     }
+    lockCurrentPiece();
+    spawnPiece(getRandomPieceType());
+    dropTimer = 0.0f;
     return droppedRows;
 }
 
@@ -145,4 +177,14 @@ const Board& GameLogic::getBoard() const {
 
 const Piece& GameLogic::getCurrentPiece() const {
     return currentPiece;
+}
+
+float GameLogic::getDropInterval() const {
+    return dropInterval;
+}
+
+void GameLogic::setDropInterval(float interval) {
+    if (interval > 0.05f) {
+        dropInterval = interval;
+    }
 }

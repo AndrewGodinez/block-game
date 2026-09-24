@@ -8,8 +8,11 @@ private:
     Piece currentPiece;
     bool gameOver;
     int linesClearedTotal;
+    float dropTimer;
+    float dropInterval;
 
     bool isValidPosition(const Piece& piece) const;
+    PieceType getRandomPieceType();
 
 public:
     GameLogic();
@@ -18,6 +21,7 @@ public:
     void reset();
 
     bool spawnPiece(PieceType type);
+    void update(float dt);
 
     bool moveLeft();
     bool moveRight();
@@ -32,4 +36,6 @@ public:
     int getLinesClearedTotal() const;
     const Board& getBoard() const;
     const Piece& getCurrentPiece() const;
+    float getDropInterval() const;
+    void setDropInterval(float interval);
 };
