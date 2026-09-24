@@ -1,0 +1,148 @@
+#include "game_logic.h"
+
+GameLogic::GameLogic() : gameOver(false), linesClearedTotal(0) {
+    initBoard(board);
+}
+
+GameLogic::~GameLogic() {
+    clearBoard(board);
+}
+
+void GameLogic::reset() {
+    clearBoard(board);
+    initBoard(board);
+    currentPiece = Piece();
+    gameOver = false;
+    linesClearedTotal = 0;
+}
+
+bool GameLogic::isValidPosition(const Piece& piece) const {
+    BlockOffset blocks[4];
+    int count = getAbsoluteBlocks(piece, blocks);
+    for (int i = 0; i < count; ++i) {
+        int c = blocks[i].col;
+        int r = blocks[i].row;
+        if (c < 0 || c >= board.colCount || r < 0 || r >= board.rowCount) {
+            return false;
+        }
+        if (getCell(board, c, r) != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool GameLogic::spawnPiece(PieceType type) {
+    currentPiece = createPiece(type, 3, 0);
+    if (!isValidPosition(currentPiece)) {
+        gameOver = true;
+        return false;
+    }
+    return true;
+}
+
+bool GameLogic::moveLeft() {
+    if (gameOver) return false;
+    Piece temp = currentPiece;
+    ::moveLeft(temp);
+    if (isValidPosition(temp)) {
+        currentPiece = temp;
+        return true;
+    }
+    return false;
+}
+
+bool GameLogic::moveRight() {
+    if (gameOver) return false;
+    Piece temp = currentPiece;
+    ::moveRight(temp);
+    if (isValidPosition(temp)) {
+        currentPiece = temp;
+        return true;
+    }
+    return false;
+}
+
+bool GameLogic::moveDown() {
+    if (gameOver) return false;
+    Piece temp = currentPiece;
+    ::moveDown(temp);
+    if (isValidPosition(temp)) {
+        currentPiece = temp;
+        return true;
+    }
+    return false;
+}
+
+bool GameLogic::rotate() {
+    if (gameOver) return false;
+    Piece temp = currentPiece;
+    ::rotatePiece(temp);
+    if (isValidPosition(temp)) {
+        currentPiece = temp;
+        return true;
+    }
+    return false;
+}
+
+bool GameLogic::rotateCounter() {
+    if (gameOver) return false;
+    Piece temp = currentPiece;
+    ::rotatePieceCounter(temp);
+    if (isValidPosition(temp)) {
+        currentPiece = temp;
+        return true;
+    }
+    return false;
+}
+
+int GameLogic::hardDrop() {
+    if (gameOver) return 0;
+    int droppedRows = 0;
+    while (moveDown()) {
+        droppedRows++;
+    }
+    return droppedRows;
+}
+
+int GameLogic::lockCurrentPiece() {
+    if (gameOver || currentPiece.type == PieceType::NONE) return 0;
+
+    BlockOffset blocks[4];
+    int count = getAbsoluteBlocks(currentPiece, blocks);
+    int pieceId = getPieceId(currentPiece.type);
+
+    for (int i = 0; i < count; ++i) {
+        setCell(board, blocks[i].col, blocks[i].row, pieceId);
+    }
+
+    if (currentPiece.type == PieceType::SPECIAL && count > 0) {
+        int rowToClear = blocks[0].row;
+        if (rowToClear >= 0 && rowToClear < board.rowCount) {
+            for (int c = 0; c < board.colCount; ++c) {
+                setCell(board, c, rowToClear, 1);
+            }
+        }
+    }
+
+    int cleared = clearFullRows(board);
+    linesClearedTotal += cleared;
+    currentPiece = Piece();
+    return cleared;
+}
+
+bool GameLogic::isGameOver() const {
+    return gameOver;
+}
+
+int GameLogic::getLinesClearedTotal() const {
+    return linesClearedTotal;
+}
+
+const Board& GameLogic::getBoard() const {
+    return board;
+}
+
+const Piece& GameLogic::getCurrentPiece() const {
+    return currentPiece;
+}
