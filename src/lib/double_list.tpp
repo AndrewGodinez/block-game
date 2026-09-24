@@ -132,3 +132,81 @@ void clear(doubleList<T>& list) {
     clear(list.head, list.tail);
     list.count = 0;
 }
+
+template<typename T>
+bool removeNode(doubleNode<T>*& head, doubleNode<T>*& tail, doubleNode<T>* target) {
+    if (target == nullptr || isEmpty(head)) return false;
+    if (target == head) {
+        return removeHead(head, tail);
+    }
+    if (target == tail) {
+        return removeTail(head, tail);
+    }
+    target->prev->next = target->next;
+    target->next->prev = target->prev;
+    delete target;
+    return true;
+}
+
+template<typename T>
+bool removeNode(doubleList<T>& list, doubleNode<T>* target) {
+    if (removeNode(list.head, list.tail, target)) {
+        list.count--;
+        return true;
+    }
+    return false;
+}
+
+template<typename T>
+doubleNode<T>* getNode(const doubleList<T>& list, int index) {
+    if (index < 0 || index >= list.count) return nullptr;
+    if (index < list.count / 2) {
+        doubleNode<T>* curr = list.head;
+        for (int i = 0; i < index; ++i) {
+            curr = curr->next;
+        }
+        return curr;
+    } else {
+        doubleNode<T>* curr = list.tail;
+        for (int i = list.count - 1; i > index; --i) {
+            curr = curr->prev;
+        }
+        return curr;
+    }
+}
+
+template<typename T>
+bool get(const doubleList<T>& list, int index, T& data) {
+    doubleNode<T>* n = getNode(list, index);
+    if (n == nullptr) return false;
+    data = n->data;
+    return true;
+}
+
+template<typename T>
+bool set(doubleList<T>& list, int index, T data) {
+    doubleNode<T>* n = getNode(list, index);
+    if (n == nullptr) return false;
+    n->data = data;
+    return true;
+}
+
+template<typename T>
+bool insertAt(doubleList<T>& list, int index, T data) {
+    if (index < 0 || index > list.count) return false;
+    if (index == 0) return insertHead(list, data);
+    if (index == list.count) return insertTail(list, data);
+    doubleNode<T>* curr = getNode(list, index);
+    doubleNode<T>* nNode = new doubleNode<T>{data, curr->prev, curr};
+    curr->prev->next = nNode;
+    curr->prev = nNode;
+    list.count++;
+    return true;
+}
+
+template<typename T>
+bool removeAt(doubleList<T>& list, int index) {
+    doubleNode<T>* n = getNode(list, index);
+    if (n == nullptr) return false;
+    return removeNode(list, n);
+}
