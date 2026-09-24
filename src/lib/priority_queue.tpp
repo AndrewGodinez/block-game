@@ -17,7 +17,7 @@ bool enqueue(node<T>*& front, node<T>*& rear, T data) {
     if (!(data < rear->data)) {
         rear->next = nNode;
         rear = nNode;
-        return true;copia lo que es igual (usando los nombres actualizado) y deja sin implementar el codigo diferencial
+        return true;
     }
 
     node<T>* prev = front;
