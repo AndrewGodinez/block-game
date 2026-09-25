@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include "nine_slice.h"
 #include "core/game_logic.h"
 
 class GameRenderer {
@@ -10,6 +11,7 @@ private:
     bool texturesLoaded[9];
     sf::Texture bgTexture;
     bool bgLoaded;
+    NineSlice panelNineSlice;
 
     float cellSize;
     float boardOffsetX;

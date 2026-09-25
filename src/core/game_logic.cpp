@@ -1,6 +1,6 @@
 #include "game_logic.h"
 
-GameLogic::GameLogic() : gameOver(false), linesClearedTotal(0), dropTimer(0.0f), dropInterval(0.8f) {
+GameLogic::GameLogic() : gameOver(false), linesClearedTotal(0), dropTimer(0.0f), dropInterval(0.8f), lineClearTimer(0.0f) {
     initBoard(board);
     spawnNextPiece();
 }
@@ -13,10 +13,12 @@ void GameLogic::reset() {
     clearBoard(board);
     initBoard(board);
     pieceBag.reset();
+    holdSlot.clear();
     currentPiece = Piece();
     gameOver = false;
     linesClearedTotal = 0;
     dropTimer = 0.0f;
+    lineClearTimer = 0.0f;
     spawnNextPiece();
 }
 
@@ -50,6 +52,13 @@ bool GameLogic::spawnNextPiece() {
 }
 
 void GameLogic::update(float dt) {
+    if (lineClearTimer > 0.0f) {
+        lineClearTimer -= dt;
+        if (lineClearTimer < 0.0f) {
+            lineClearTimer = 0.0f;
+        }
+    }
+
     if (gameOver) return;
 
     if (currentPiece.type == PieceType::NONE) {
@@ -156,7 +165,11 @@ int GameLogic::lockCurrentPiece() {
 
     int cleared = clearFullRows(board);
     linesClearedTotal += cleared;
+    if (cleared > 0) {
+        lineClearTimer = 0.16f;
+    }
     currentPiece = Piece();
+    holdSlot.resetTurn();
     return cleared;
 }
 
@@ -188,4 +201,37 @@ void GameLogic::setDropInterval(float interval) {
     if (interval > 0.05f) {
         dropInterval = interval;
     }
+}
+
+bool GameLogic::holdCurrentPiece() {
+    if (gameOver || currentPiece.type == PieceType::NONE || !holdSlot.canSwap()) {
+        return false;
+    }
+
+    PieceType held = holdSlot.swap(currentPiece.type);
+    if (held == PieceType::NONE) {
+        currentPiece = createPiece(pieceBag.nextPiece(), 3, 0);
+    } else {
+        currentPiece = createPiece(held, 3, 0);
+    }
+
+    dropTimer = 0.0f;
+
+    if (!isValidPosition(currentPiece)) {
+        gameOver = true;
+    }
+
+    return true;
+}
+
+PieceType GameLogic::getHeldPiece() const {
+    return holdSlot.getHeldPiece();
+}
+
+bool GameLogic::canHold() const {
+    return holdSlot.canSwap();
+}
+
+float GameLogic::getLineClearTimer() const {
+    return lineClearTimer;
 }

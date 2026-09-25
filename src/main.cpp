@@ -36,6 +36,8 @@ int main() {
                         game.rotate();
                     } else if (key->code == sf::Keyboard::Key::Space) {
                         game.hardDrop();
+                    } else if (key->code == sf::Keyboard::Key::C) {
+                        game.holdCurrentPiece();
                     }
                 }
             }
