@@ -1,11 +1,8 @@
 #include "game_logic.h"
-#include <cstdlib>
-#include <ctime>
 
 GameLogic::GameLogic() : gameOver(false), linesClearedTotal(0), dropTimer(0.0f), dropInterval(0.8f) {
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
     initBoard(board);
-    spawnPiece(getRandomPieceType());
+    spawnNextPiece();
 }
 
 GameLogic::~GameLogic() {
@@ -15,16 +12,12 @@ GameLogic::~GameLogic() {
 void GameLogic::reset() {
     clearBoard(board);
     initBoard(board);
+    pieceBag.reset();
     currentPiece = Piece();
     gameOver = false;
     linesClearedTotal = 0;
     dropTimer = 0.0f;
-    spawnPiece(getRandomPieceType());
-}
-
-PieceType GameLogic::getRandomPieceType() {
-    int r = (std::rand() % 7) + 1;
-    return static_cast<PieceType>(r);
+    spawnNextPiece();
 }
 
 bool GameLogic::isValidPosition(const Piece& piece) const {
@@ -52,11 +45,15 @@ bool GameLogic::spawnPiece(PieceType type) {
     return true;
 }
 
+bool GameLogic::spawnNextPiece() {
+    return spawnPiece(pieceBag.nextPiece());
+}
+
 void GameLogic::update(float dt) {
     if (gameOver) return;
 
     if (currentPiece.type == PieceType::NONE) {
-        spawnPiece(getRandomPieceType());
+        spawnNextPiece();
         if (gameOver) return;
     }
 
@@ -65,7 +62,7 @@ void GameLogic::update(float dt) {
         dropTimer = 0.0f;
         if (!moveDown()) {
             lockCurrentPiece();
-            spawnPiece(getRandomPieceType());
+            spawnNextPiece();
         }
     }
 }
@@ -132,7 +129,7 @@ int GameLogic::hardDrop() {
         droppedRows++;
     }
     lockCurrentPiece();
-    spawnPiece(getRandomPieceType());
+    spawnNextPiece();
     dropTimer = 0.0f;
     return droppedRows;
 }
@@ -161,6 +158,10 @@ int GameLogic::lockCurrentPiece() {
     linesClearedTotal += cleared;
     currentPiece = Piece();
     return cleared;
+}
+
+void GameLogic::peekNextPieces(PieceType outPieces[3]) const {
+    pieceBag.peekNext(outPieces);
 }
 
 bool GameLogic::isGameOver() const {

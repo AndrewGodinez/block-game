@@ -158,6 +158,56 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
         controlsText.setFillColor(sf::Color(190, 195, 210));
         controlsText.setPosition({LEFT_X + 25.f, boardOffsetY + 175.f});
         window.draw(controlsText);
+
+        const float RIGHT_X = 870.f;
+        sf::RectangleShape nextBox({270.f, 415.f});
+        nextBox.setPosition({RIGHT_X, boardOffsetY});
+        nextBox.setFillColor(sf::Color(18, 22, 30));
+        nextBox.setOutlineThickness(2.f);
+        nextBox.setOutlineColor(sf::Color(120, 100, 70));
+        window.draw(nextBox);
+
+        sf::Text nextTitle(font);
+        nextTitle.setString("SIGUIENTES (Cola)");
+        nextTitle.setCharacterSize(22);
+        nextTitle.setFillColor(sf::Color(240, 220, 160));
+        nextTitle.setPosition({RIGHT_X + 25.f, boardOffsetY + 15.f});
+        window.draw(nextTitle);
+
+        PieceType nextPieces[3];
+        game.peekNextPieces(nextPieces);
+
+        for (int i = 0; i < 3; ++i) {
+            if (nextPieces[i] == PieceType::NONE) continue;
+            float slotY = boardOffsetY + 55.f + i * 115.f;
+            sf::RectangleShape slot({220.f, 95.f});
+            slot.setPosition({RIGHT_X + 25.f, slotY});
+            slot.setFillColor(sf::Color(12, 15, 20));
+            slot.setOutlineThickness(1.f);
+            slot.setOutlineColor(sf::Color(60, 65, 80));
+            window.draw(slot);
+
+            BlockOffset pBlocks[4];
+            int count = getPieceOffsets(nextPieces[i], 0, pBlocks);
+            int pId = getPieceId(nextPieces[i]);
+            float previewCellSize = 22.f;
+
+            float startX = RIGHT_X + 75.f;
+            float startY = slotY + 22.f;
+            if (nextPieces[i] == PieceType::I) {
+                startX = RIGHT_X + 65.f;
+                startY = slotY + 15.f;
+            } else if (nextPieces[i] == PieceType::O) {
+                startX = RIGHT_X + 85.f;
+                startY = slotY + 22.f;
+            }
+
+            for (int b = 0; b < count; ++b) {
+                float px = startX + pBlocks[b].col * previewCellSize;
+                float py = startY + pBlocks[b].row * previewCellSize;
+                drawCell(window, px, py, pId, previewCellSize);
+            }
+        }
     }
 
     if (game.isGameOver()) {

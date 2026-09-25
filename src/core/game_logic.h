@@ -1,18 +1,19 @@
 #pragma once
 #include "board.h"
 #include "piece.h"
+#include "piece_bag.h"
 
 class GameLogic {
 private:
     Board board;
     Piece currentPiece;
+    PieceBag pieceBag;
     bool gameOver;
     int linesClearedTotal;
     float dropTimer;
     float dropInterval;
 
     bool isValidPosition(const Piece& piece) const;
-    PieceType getRandomPieceType();
 
 public:
     GameLogic();
@@ -21,6 +22,7 @@ public:
     void reset();
 
     bool spawnPiece(PieceType type);
+    bool spawnNextPiece();
     void update(float dt);
 
     bool moveLeft();
@@ -31,6 +33,8 @@ public:
     int hardDrop();
 
     int lockCurrentPiece();
+
+    void peekNextPieces(PieceType outPieces[3]) const;
 
     bool isGameOver() const;
     int getLinesClearedTotal() const;

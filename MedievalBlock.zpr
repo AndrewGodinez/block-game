@@ -41,6 +41,14 @@ open=true
 path=src/ui/game_renderer.cpp
 cursor=0:0
 open=true
+[source]
+path=src/core/piece_bag.cpp
+cursor=0:0
+open=true
+[header]
+path=src/core/piece_bag.h
+cursor=0:0
+open=true
 [header]
 path=src/lib/node.h
 cursor=0:0
