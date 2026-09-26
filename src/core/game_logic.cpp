@@ -1,6 +1,6 @@
 #include "game_logic.h"
 
-GameLogic::GameLogic() : gameOver(false), linesClearedTotal(0), dropTimer(0.0f), dropInterval(0.8f), lineClearTimer(0.0f), gameTime(0.0f) {
+GameLogic::GameLogic() : gameOver(false), linesClearedTotal(0), score(0), dropTimer(0.0f), dropInterval(0.8f), lineClearTimer(0.0f), gameTime(0.0f) {
     replayNextPieces[0] = PieceType::NONE;
     replayNextPieces[1] = PieceType::NONE;
     replayNextPieces[2] = PieceType::NONE;
@@ -23,6 +23,7 @@ void GameLogic::reset() {
     currentPiece = Piece();
     gameOver = false;
     linesClearedTotal = 0;
+    score = 0;
     dropTimer = 0.0f;
     lineClearTimer = 0.0f;
     gameTime = 0.0f;
@@ -146,6 +147,7 @@ bool GameLogic::moveDown() {
     ::moveDown(temp);
     if (isValidPosition(temp)) {
         currentPiece = temp;
+        score += 1;
         recordCurrentState();
         return true;
     }
@@ -189,6 +191,7 @@ int GameLogic::hardDrop() {
             break;
         }
     }
+    score += droppedRows * 2;
     lockCurrentPiece();
     spawnNextPiece();
     dropTimer = 0.0f;
@@ -213,11 +216,17 @@ int GameLogic::lockCurrentPiece() {
             for (int c = 0; c < board.colCount; ++c) {
                 setCell(board, c, rowToClear, 1);
             }
+            score += 150;
         }
     }
 
     int cleared = clearFullRows(board);
     linesClearedTotal += cleared;
+    if (cleared == 1) score += 100;
+    else if (cleared == 2) score += 300;
+    else if (cleared == 3) score += 500;
+    else if (cleared >= 4) score += 800;
+
     if (cleared > 0) {
         lineClearTimer = 0.16f;
     }
@@ -242,6 +251,10 @@ bool GameLogic::isGameOver() const {
 
 int GameLogic::getLinesClearedTotal() const {
     return linesClearedTotal;
+}
+
+int GameLogic::getScore() const {
+    return score;
 }
 
 const Board& GameLogic::getBoard() const {
@@ -321,6 +334,7 @@ void GameLogic::recordCurrentState() {
     snap.heldPiece = holdSlot.getHeldPiece();
     snap.canHold = holdSlot.canSwap();
     snap.linesClearedTotal = linesClearedTotal;
+    snap.score = score;
     snap.dropInterval = dropInterval;
     snap.gameTime = gameTime;
     pieceBag.peekNext(snap.nextPieces);
@@ -332,6 +346,7 @@ void GameLogic::applySnapshot(const GameStateSnapshot& snapshot) {
     currentPiece = snapshot.currentPiece;
     holdSlot.setHeldPiece(snapshot.heldPiece, snapshot.canHold);
     linesClearedTotal = snapshot.linesClearedTotal;
+    score = snapshot.score;
     dropInterval = snapshot.dropInterval;
     gameTime = snapshot.gameTime;
     for (int i = 0; i < 3; ++i) {

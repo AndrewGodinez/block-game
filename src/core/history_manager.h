@@ -10,6 +10,7 @@ struct GameStateSnapshot {
     PieceType heldPiece;
     bool canHold;
     int linesClearedTotal;
+    int score;
     float dropInterval;
     float gameTime;
     PieceType nextPieces[3];

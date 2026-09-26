@@ -16,6 +16,7 @@ private:
     HistoryManager historyManager;
     bool gameOver;
     int linesClearedTotal;
+    int score;
     float dropTimer;
     float dropInterval;
     float lineClearTimer;
@@ -52,6 +53,7 @@ public:
 
     bool isGameOver() const;
     int getLinesClearedTotal() const;
+    int getScore() const;
     const Board& getBoard() const;
     const Piece& getCurrentPiece() const;
     float getDropInterval() const;

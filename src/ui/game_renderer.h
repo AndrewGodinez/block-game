@@ -25,6 +25,13 @@ public:
     void render(sf::RenderWindow& window, const GameLogic& game);
     void renderMenu(sf::RenderWindow& window, int selectedIndex);
     void drawCell(sf::RenderWindow& window, float pixelX, float pixelY, int pieceId, float customSize = 31.0f);
+    void drawBackground(sf::RenderWindow& window) const;
+
+    const sf::Font& getFont() const { return font; }
+    bool isFontLoaded() const { return fontLoaded; }
+    NineSlice& getNineSlice() { return panelNineSlice; }
+    const NineSlice& getNineSlice() const { return panelNineSlice; }
+
     sf::FloatRect getPlayButtonBounds() const;
     sf::FloatRect getExitButtonBounds() const;
 };

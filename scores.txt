@@ -1,0 +1,6 @@
+Arthur 12000
+Lancelot 9500
+Guinevere 7200
+Merlin 5400
+Galahad 3100
+Caballero 250

@@ -89,11 +89,9 @@ void GameRenderer::drawCell(sf::RenderWindow& window, float pixelX, float pixelY
     }
 }
 
-void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
+void GameRenderer::drawBackground(sf::RenderWindow& window) const {
     const float SCREEN_W = 1280.f;
     const float SCREEN_H = 700.f;
-    const float LEFT_X = 140.f;
-    const float RIGHT_X = 870.f;
 
     if (bgLoaded) {
         sf::Sprite bgSprite(bgTexture);
@@ -102,6 +100,13 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
         bgSprite.setScale({sx, sy});
         window.draw(bgSprite);
     }
+}
+
+void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
+    const float LEFT_X = 140.f;
+    const float RIGHT_X = 870.f;
+
+    drawBackground(window);
 
     const Board& board = game.getBoard();
     float boardWidth = board.colCount * cellSize;
@@ -179,9 +184,18 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
         titleText.setPosition({LEFT_X + 35.f, boardOffsetY + 20.f});
         window.draw(titleText);
 
+        sf::Text scoreText(font);
+        scoreText.setString("Puntaje: " + std::to_string(game.getScore()));
+        scoreText.setCharacterSize(22);
+        scoreText.setFillColor(sf::Color(255, 230, 140));
+        scoreText.setOutlineColor(textOutline);
+        scoreText.setOutlineThickness(1.2f);
+        scoreText.setPosition({LEFT_X + 40.f, boardOffsetY + 55.f});
+        window.draw(scoreText);
+
         sf::Text linesText(font);
         linesText.setString("Lineas: " + std::to_string(game.getLinesClearedTotal()));
-        linesText.setCharacterSize(22);
+        linesText.setCharacterSize(20);
         if (clearTimer > 0.0f) {
             linesText.setFillColor(sf::Color(255, 245, 160));
             linesText.setOutlineColor(sf::Color(85, 60, 25));
@@ -190,7 +204,7 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
             linesText.setOutlineColor(sf::Color(35, 60, 35));
         }
         linesText.setOutlineThickness(1.2f);
-        linesText.setPosition({LEFT_X + 40.f, boardOffsetY + 60.f});
+        linesText.setPosition({LEFT_X + 40.f, boardOffsetY + 82.f});
         window.draw(linesText);
 
         GameEvent nextEv;
@@ -203,20 +217,20 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
 
             sf::Text evTitle(font);
             evTitle.setString("EVENTO:");
-            evTitle.setCharacterSize(18);
+            evTitle.setCharacterSize(17);
             evTitle.setFillColor(sf::Color(240, 210, 140));
             evTitle.setOutlineColor(textOutline);
             evTitle.setOutlineThickness(1.2f);
-            evTitle.setPosition({LEFT_X + 40.f, boardOffsetY + 95.f});
+            evTitle.setPosition({LEFT_X + 40.f, boardOffsetY + 108.f});
             window.draw(evTitle);
 
             sf::Text evDesc(font);
             evDesc.setString(evName + " (" + std::to_string(static_cast<int>(remaining)) + "s)");
-            evDesc.setCharacterSize(18);
+            evDesc.setCharacterSize(17);
             evDesc.setFillColor(textFill);
             evDesc.setOutlineColor(textOutline);
             evDesc.setOutlineThickness(1.0f);
-            evDesc.setPosition({LEFT_X + 40.f, boardOffsetY + 120.f});
+            evDesc.setPosition({LEFT_X + 40.f, boardOffsetY + 128.f});
             window.draw(evDesc);
         }
 
@@ -357,19 +371,28 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
             goText.setFillColor(sf::Color(240, 60, 60));
             goText.setOutlineColor(sf::Color(70, 15, 15));
             goText.setOutlineThickness(2.0f);
-            goText.setPosition({boardOffsetX + 35.f, boardOffsetY + 220.f});
+            goText.setPosition({boardOffsetX + 35.f, boardOffsetY + 200.f});
             window.draw(goText);
 
             sf::Color textFill(245, 235, 210);
             sf::Color textOutline(65, 48, 30);
 
+            sf::Text scoreOver(font);
+            scoreOver.setString("Puntaje: " + std::to_string(game.getScore()));
+            scoreOver.setCharacterSize(24);
+            scoreOver.setFillColor(sf::Color(255, 235, 140));
+            scoreOver.setOutlineColor(textOutline);
+            scoreOver.setOutlineThickness(1.5f);
+            scoreOver.setPosition({boardOffsetX + 55.f, boardOffsetY + 255.f});
+            window.draw(scoreOver);
+
             sf::Text subText(font);
-            subText.setString("[P] Ver Replay\n[R] Reiniciar");
-            subText.setCharacterSize(22);
+            subText.setString("[P] Ver Replay\n[ENTER] Ver Puntajes\n[R] Reiniciar");
+            subText.setCharacterSize(20);
             subText.setFillColor(textFill);
             subText.setOutlineColor(textOutline);
             subText.setOutlineThickness(1.2f);
-            subText.setPosition({boardOffsetX + 55.f, boardOffsetY + 290.f});
+            subText.setPosition({boardOffsetX + 45.f, boardOffsetY + 295.f});
             window.draw(subText);
         }
     }
