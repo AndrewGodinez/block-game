@@ -17,3 +17,11 @@ bool isRowFull(const doubleList<int>& row);
 bool isRowEmpty(const doubleList<int>& row);
 
 int clearFullRows(Board& board);
+bool removeBottomRow(Board& board);
+
+struct BoardSnapshot {
+    int cells[20][10];
+};
+
+BoardSnapshot captureBoard(const Board& board);
+void restoreBoard(Board& board, const BoardSnapshot& snapshot);

@@ -17,6 +17,7 @@ public:
     PieceType nextPiece();
     void peekNext(PieceType outPieces[3]) const;
 
+    void injectPieceFront(PieceType type);
     int getCount() const;
     bool isEmpty() const;
 };

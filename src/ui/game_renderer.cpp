@@ -39,6 +39,40 @@ sf::Color GameRenderer::getPieceFallbackColor(int pieceId) const {
 }
 
 void GameRenderer::drawCell(sf::RenderWindow& window, float pixelX, float pixelY, int pieceId, float customSize) {
+    if (pieceId == 8) {
+        sf::RectangleShape outerGlow({customSize + 8.f, customSize + 8.f});
+        outerGlow.setPosition({pixelX - 4.f, pixelY - 4.f});
+        outerGlow.setFillColor(sf::Color(255, 215, 0, 45));
+        window.draw(outerGlow);
+
+        sf::RectangleShape midGlow({customSize + 4.f, customSize + 4.f});
+        midGlow.setPosition({pixelX - 2.f, pixelY - 2.f});
+        midGlow.setFillColor(sf::Color(255, 230, 80, 85));
+        window.draw(midGlow);
+
+        if (texturesLoaded[2]) {
+            sf::Sprite sprite(blockTextures[2]);
+            sprite.setColor(sf::Color(255, 245, 175));
+            float scale = customSize / 256.f;
+            sprite.setScale({scale, scale});
+            sprite.setPosition({pixelX, pixelY});
+            window.draw(sprite);
+        } else {
+            sf::RectangleShape rect({customSize - 1.f, customSize - 1.f});
+            rect.setPosition({pixelX, pixelY});
+            rect.setFillColor(sf::Color(255, 215, 0));
+            window.draw(rect);
+        }
+
+        sf::RectangleShape rim({customSize, customSize});
+        rim.setFillColor(sf::Color::Transparent);
+        rim.setOutlineThickness(1.5f);
+        rim.setOutlineColor(sf::Color(255, 255, 200, 220));
+        rim.setPosition({pixelX, pixelY});
+        window.draw(rim);
+        return;
+    }
+
     if (pieceId >= 1 && pieceId <= 7 && texturesLoaded[pieceId]) {
         sf::Sprite sprite(blockTextures[pieceId]);
         float scale = customSize / 256.f;
@@ -48,7 +82,7 @@ void GameRenderer::drawCell(sf::RenderWindow& window, float pixelX, float pixelY
     } else {
         sf::RectangleShape rect({customSize - 1.f, customSize - 1.f});
         rect.setPosition({pixelX, pixelY});
-        rect.setFillColor(pieceId == 8 ? sf::Color(255, 215, 0) : getPieceFallbackColor(pieceId));
+        rect.setFillColor(getPieceFallbackColor(pieceId));
         rect.setOutlineThickness(1.f);
         rect.setOutlineColor(sf::Color(220, 220, 220));
         window.draw(rect);
@@ -156,8 +190,35 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
             linesText.setOutlineColor(sf::Color(35, 60, 35));
         }
         linesText.setOutlineThickness(1.2f);
-        linesText.setPosition({LEFT_X + 40.f, boardOffsetY + 65.f});
+        linesText.setPosition({LEFT_X + 40.f, boardOffsetY + 60.f});
         window.draw(linesText);
+
+        GameEvent nextEv;
+        if (game.getNextEvent(nextEv)) {
+            float remaining = nextEv.triggerTime - game.getGameTime();
+            if (remaining < 0.0f) remaining = 0.0f;
+            std::string evName = "Aceleracion";
+            if (nextEv.type == EventType::MAGIC_PIECE) evName = "Pieza Dorada";
+            else if (nextEv.type == EventType::EARTHQUAKE) evName = "Terremoto";
+
+            sf::Text evTitle(font);
+            evTitle.setString("EVENTO:");
+            evTitle.setCharacterSize(18);
+            evTitle.setFillColor(sf::Color(240, 210, 140));
+            evTitle.setOutlineColor(textOutline);
+            evTitle.setOutlineThickness(1.2f);
+            evTitle.setPosition({LEFT_X + 40.f, boardOffsetY + 95.f});
+            window.draw(evTitle);
+
+            sf::Text evDesc(font);
+            evDesc.setString(evName + " (" + std::to_string(static_cast<int>(remaining)) + "s)");
+            evDesc.setCharacterSize(18);
+            evDesc.setFillColor(textFill);
+            evDesc.setOutlineColor(textOutline);
+            evDesc.setOutlineThickness(1.0f);
+            evDesc.setPosition({LEFT_X + 40.f, boardOffsetY + 120.f});
+            window.draw(evDesc);
+        }
 
         sf::Text holdTitle(font);
         holdTitle.setString("EN ESPERA (Hold: [C])");
@@ -165,7 +226,7 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
         holdTitle.setFillColor(sf::Color(240, 210, 140));
         holdTitle.setOutlineColor(textOutline);
         holdTitle.setOutlineThickness(1.2f);
-        holdTitle.setPosition({LEFT_X + 35.f, boardOffsetY + 105.f});
+        holdTitle.setPosition({LEFT_X + 35.f, boardOffsetY + 155.f});
         window.draw(holdTitle);
 
         PieceType heldPiece = game.getHeldPiece();
@@ -175,13 +236,13 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
             int hId = getPieceId(heldPiece);
             float previewCellSize = 22.f;
             float holdStartX = LEFT_X + 105.f;
-            float holdStartY = boardOffsetY + 145.f;
+            float holdStartY = boardOffsetY + 190.f;
             if (heldPiece == PieceType::I) {
                 holdStartX = LEFT_X + 95.f;
-                holdStartY = boardOffsetY + 135.f;
-            } else if (heldPiece == PieceType::O) {
+                holdStartY = boardOffsetY + 180.f;
+            } else if (heldPiece == PieceType::O || heldPiece == PieceType::SPECIAL) {
                 holdStartX = LEFT_X + 115.f;
-                holdStartY = boardOffsetY + 145.f;
+                holdStartY = boardOffsetY + 190.f;
             }
             for (int b = 0; b < hCount; ++b) {
                 float px = holdStartX + hBlocks[b].col * previewCellSize;
@@ -196,15 +257,21 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
         controlsTitle.setFillColor(sf::Color(240, 210, 140));
         controlsTitle.setOutlineColor(textOutline);
         controlsTitle.setOutlineThickness(1.2f);
-        controlsTitle.setPosition({LEFT_X + 40.f, boardOffsetY + 225.f});
+        controlsTitle.setPosition({LEFT_X + 40.f, boardOffsetY + 250.f});
         window.draw(controlsTitle);
 
-        const char* controlsGuide = 
+        const char* controlsGuide = game.isReplayMode() ?
+            "[ESPACIO]   Play/Pausa\n"
+            "[A / <]     Paso Atras\n"
+            "[D / >]     Paso Adelante\n"
+            "[R]         Reiniciar\n"
+            "[ESC]       Salir Replay" :
             "[A / D]     Mover\n"
             "[W]         Rotar\n"
             "[S]         Bajar\n"
             "[ESPACIO]   Caer\n"
             "[C]         Guardar\n"
+            "[Z / Y]     Undo/Redo\n"
             "[R]         Reiniciar\n"
             "[ESC]       Salir";
 
@@ -214,7 +281,7 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
         controlsText.setFillColor(textFill);
         controlsText.setOutlineColor(textOutline);
         controlsText.setOutlineThickness(1.0f);
-        controlsText.setPosition({LEFT_X + 40.f, boardOffsetY + 260.f});
+        controlsText.setPosition({LEFT_X + 40.f, boardOffsetY + 280.f});
         window.draw(controlsText);
 
         panelNineSlice.draw(window, sf::FloatRect(sf::Vector2f(RIGHT_X, boardOffsetY), sf::Vector2f(270.f, 500.f)));
@@ -244,7 +311,7 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
             if (nextPieces[i] == PieceType::I) {
                 startX = RIGHT_X + 90.f;
                 startY = boardOffsetY + 75.f + i * 110.f;
-            } else if (nextPieces[i] == PieceType::O) {
+            } else if (nextPieces[i] == PieceType::O || nextPieces[i] == PieceType::SPECIAL) {
                 startX = RIGHT_X + 110.f;
                 startY = boardOffsetY + 85.f + i * 110.f;
             }
@@ -257,7 +324,27 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
         }
     }
 
-    if (game.isGameOver()) {
+    if (game.isReplayMode()) {
+        sf::RectangleShape banner({boardWidth, 40.f});
+        banner.setPosition({boardOffsetX, boardOffsetY - 45.f});
+        banner.setFillColor(sf::Color(35, 30, 25, 235));
+        banner.setOutlineThickness(1.5f);
+        banner.setOutlineColor(sf::Color(240, 210, 140));
+        window.draw(banner);
+
+        if (fontLoaded) {
+            sf::Color textOutline(65, 48, 30);
+            sf::Text replayTitle(font);
+            std::string stateStr = game.isPlayingReplay() ? "PLAY" : "PAUSA";
+            replayTitle.setString("REPLAY [" + stateStr + "]  " + std::to_string(game.getHistoryStep()) + " / " + std::to_string(game.getHistoryTotal()));
+            replayTitle.setCharacterSize(18);
+            replayTitle.setFillColor(sf::Color(255, 230, 120));
+            replayTitle.setOutlineColor(textOutline);
+            replayTitle.setOutlineThickness(1.2f);
+            replayTitle.setPosition({boardOffsetX + 20.f, boardOffsetY - 37.f});
+            window.draw(replayTitle);
+        }
+    } else if (game.isGameOver()) {
         sf::RectangleShape overlay({boardWidth, boardHeight});
         overlay.setPosition({boardOffsetX, boardOffsetY});
         overlay.setFillColor(sf::Color(0, 0, 0, 215));
@@ -270,20 +357,127 @@ void GameRenderer::render(sf::RenderWindow& window, const GameLogic& game) {
             goText.setFillColor(sf::Color(240, 60, 60));
             goText.setOutlineColor(sf::Color(70, 15, 15));
             goText.setOutlineThickness(2.0f);
-            goText.setPosition({boardOffsetX + 35.f, boardOffsetY + 240.f});
+            goText.setPosition({boardOffsetX + 35.f, boardOffsetY + 220.f});
             window.draw(goText);
 
             sf::Color textFill(245, 235, 210);
             sf::Color textOutline(65, 48, 30);
 
             sf::Text subText(font);
-            subText.setString("Presiona [R] para reiniciar");
-            subText.setCharacterSize(20);
+            subText.setString("[P] Ver Replay\n[R] Reiniciar");
+            subText.setCharacterSize(22);
             subText.setFillColor(textFill);
             subText.setOutlineColor(textOutline);
             subText.setOutlineThickness(1.2f);
-            subText.setPosition({boardOffsetX + 20.f, boardOffsetY + 310.f});
+            subText.setPosition({boardOffsetX + 55.f, boardOffsetY + 290.f});
             window.draw(subText);
         }
     }
 }
+
+sf::FloatRect GameRenderer::getPlayButtonBounds() const {
+    return sf::FloatRect(sf::Vector2f(500.f, 320.f), sf::Vector2f(280.f, 60.f));
+}
+
+sf::FloatRect GameRenderer::getExitButtonBounds() const {
+    return sf::FloatRect(sf::Vector2f(500.f, 405.f), sf::Vector2f(280.f, 60.f));
+}
+
+void GameRenderer::renderMenu(sf::RenderWindow& window, int selectedIndex) {
+    const float SCREEN_W = 1280.f;
+    const float SCREEN_H = 700.f;
+
+    if (bgLoaded) {
+        sf::Sprite bgSprite(bgTexture);
+        float sx = SCREEN_W / static_cast<float>(bgTexture.getSize().x);
+        float sy = SCREEN_H / static_cast<float>(bgTexture.getSize().y);
+        bgSprite.setScale({sx, sy});
+        window.draw(bgSprite);
+    }
+
+    if (!fontLoaded) return;
+
+    sf::Color textFill(245, 235, 210);
+    sf::Color textOutline(65, 48, 30);
+    sf::Color goldText(255, 235, 140);
+    sf::Color goldOutline(85, 60, 25);
+
+    sf::Text title(font);
+    title.setString("MEDIEVAL BLOCK");
+    title.setCharacterSize(64);
+    title.setFillColor(goldText);
+    title.setOutlineColor(goldOutline);
+    title.setOutlineThickness(2.5f);
+    sf::FloatRect titleBounds = title.getLocalBounds();
+    title.setPosition({(SCREEN_W - titleBounds.size.x) * 0.5f, 150.f});
+    window.draw(title);
+
+    sf::Text subtitle(font);
+    subtitle.setString("TETRIS MEDIEVAL - UNA EIF207");
+    subtitle.setCharacterSize(22);
+    subtitle.setFillColor(textFill);
+    subtitle.setOutlineColor(textOutline);
+    subtitle.setOutlineThickness(1.2f);
+    sf::FloatRect subBounds = subtitle.getLocalBounds();
+    subtitle.setPosition({(SCREEN_W - subBounds.size.x) * 0.5f, 230.f});
+    window.draw(subtitle);
+
+    sf::FloatRect playBounds = getPlayButtonBounds();
+    sf::Color playTint = (selectedIndex == 0) ? sf::Color(255, 245, 205) : sf::Color(180, 180, 180, 220);
+    panelNineSlice.draw(window, playBounds, playTint);
+
+    if (selectedIndex == 0) {
+        sf::RectangleShape highlight(playBounds.size);
+        highlight.setPosition(playBounds.position);
+        highlight.setFillColor(sf::Color::Transparent);
+        highlight.setOutlineThickness(2.f);
+        highlight.setOutlineColor(sf::Color(255, 225, 130, 200));
+        window.draw(highlight);
+    }
+
+    sf::Text playText(font);
+    playText.setString(selectedIndex == 0 ? "> JUGAR <" : "JUGAR");
+    playText.setCharacterSize(26);
+    playText.setFillColor(selectedIndex == 0 ? goldText : textFill);
+    playText.setOutlineColor(selectedIndex == 0 ? goldOutline : textOutline);
+    playText.setOutlineThickness(1.5f);
+    sf::FloatRect ptb = playText.getLocalBounds();
+    playText.setPosition({playBounds.position.x + (playBounds.size.x - ptb.size.x) * 0.5f,
+                          playBounds.position.y + (playBounds.size.y - ptb.size.y) * 0.5f - 4.f});
+    window.draw(playText);
+
+    sf::FloatRect exitBounds = getExitButtonBounds();
+    sf::Color exitTint = (selectedIndex == 1) ? sf::Color(255, 245, 205) : sf::Color(180, 180, 180, 220);
+    panelNineSlice.draw(window, exitBounds, exitTint);
+
+    if (selectedIndex == 1) {
+        sf::RectangleShape highlight(exitBounds.size);
+        highlight.setPosition(exitBounds.position);
+        highlight.setFillColor(sf::Color::Transparent);
+        highlight.setOutlineThickness(2.f);
+        highlight.setOutlineColor(sf::Color(255, 225, 130, 200));
+        window.draw(highlight);
+    }
+
+    sf::Text exitText(font);
+    exitText.setString(selectedIndex == 1 ? "> SALIR <" : "SALIR");
+    exitText.setCharacterSize(26);
+    exitText.setFillColor(selectedIndex == 1 ? goldText : textFill);
+    exitText.setOutlineColor(selectedIndex == 1 ? goldOutline : textOutline);
+    exitText.setOutlineThickness(1.5f);
+    sf::FloatRect etb = exitText.getLocalBounds();
+    exitText.setPosition({exitBounds.position.x + (exitBounds.size.x - etb.size.x) * 0.5f,
+                          exitBounds.position.y + (exitBounds.size.y - etb.size.y) * 0.5f - 4.f});
+    window.draw(exitText);
+
+    sf::Text hint(font);
+    hint.setString("[W / S / Flechas]  Navegar      [ENTER / ESPACIO / Clic]  Seleccionar");
+    hint.setCharacterSize(18);
+    hint.setFillColor(textFill);
+    hint.setOutlineColor(textOutline);
+    hint.setOutlineThickness(1.0f);
+    sf::FloatRect htb = hint.getLocalBounds();
+    hint.setPosition({(SCREEN_W - htb.size.x) * 0.5f, 530.f});
+    window.draw(hint);
+}
+

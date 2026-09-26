@@ -57,3 +57,11 @@ PieceType HoldSlot::getHeldPiece() const {
 bool HoldSlot::hasPiece() const {
     return !isEmpty(pImpl->slot);
 }
+
+void HoldSlot::setHeldPiece(PieceType type, bool allowedToSwap) {
+    ::clear(pImpl->slot);
+    if (type != PieceType::NONE) {
+        push(pImpl->slot, type);
+    }
+    pImpl->canHold = allowedToSwap;
+}

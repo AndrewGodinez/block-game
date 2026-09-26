@@ -21,4 +21,5 @@ public:
     PieceType swap(PieceType current);
     PieceType getHeldPiece() const;
     bool hasPiece() const;
+    void setHeldPiece(PieceType type, bool allowedToSwap);
 };

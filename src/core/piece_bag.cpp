@@ -54,6 +54,15 @@ void PieceBag::peekNext(PieceType outPieces[3]) const {
     }
 }
 
+void PieceBag::injectPieceFront(PieceType type) {
+    node<PieceType>* nNode = new node<PieceType>{type, queue.front};
+    queue.front = nNode;
+    if (queue.rear == nullptr) {
+        queue.rear = nNode;
+    }
+    queue.count++;
+}
+
 int PieceBag::getCount() const {
     return queue.count;
 }

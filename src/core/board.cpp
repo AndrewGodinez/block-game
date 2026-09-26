@@ -95,3 +95,34 @@ int clearFullRows(Board& board) {
 
     return cleared;
 }
+
+bool removeBottomRow(Board& board) {
+    if (board.rows.tail == nullptr) return false;
+    doubleNode<doubleList<int>*>* tailNode = board.rows.tail;
+    if (tailNode->data != nullptr) {
+        clear(*(tailNode->data));
+        delete tailNode->data;
+    }
+    removeNode(board.rows, tailNode);
+    doubleList<int>* newRow = createEmptyRow(board.colCount);
+    insertHead(board.rows, newRow);
+    return true;
+}
+
+BoardSnapshot captureBoard(const Board& board) {
+    BoardSnapshot snapshot;
+    for (int r = 0; r < board.rowCount; ++r) {
+        for (int c = 0; c < board.colCount; ++c) {
+            snapshot.cells[r][c] = getCell(board, c, r);
+        }
+    }
+    return snapshot;
+}
+
+void restoreBoard(Board& board, const BoardSnapshot& snapshot) {
+    for (int r = 0; r < board.rowCount; ++r) {
+        for (int c = 0; c < board.colCount; ++c) {
+            setCell(board, c, r, snapshot.cells[r][c]);
+        }
+    }
+}

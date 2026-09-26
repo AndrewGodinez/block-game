@@ -23,5 +23,8 @@ public:
     GameRenderer(float cellSize = 31.0f, float offsetX = 485.0f, float offsetY = 38.0f);
 
     void render(sf::RenderWindow& window, const GameLogic& game);
+    void renderMenu(sf::RenderWindow& window, int selectedIndex);
     void drawCell(sf::RenderWindow& window, float pixelX, float pixelY, int pieceId, float customSize = 31.0f);
+    sf::FloatRect getPlayButtonBounds() const;
+    sf::FloatRect getExitButtonBounds() const;
 };
